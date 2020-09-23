@@ -17,17 +17,27 @@ interface IRepository {
 const Dashboard: React.FC = () => {
   const [repositories, setRepositories] = useState<IRepository[]>([]);
   const [newRepo, setNewRepo] = useState('');
+  const [inputError, setInputError] = useState('');
 
   const handleAddRepository = async (event: FormEvent) => {
     event.preventDefault();
 
-    const response = await api.get<IRepository>(`repos/${newRepo}`);
+    if (!newRepo) {
+      setInputError('Digite o autor/nome do repositorio');
+      return;
+    }
 
-    setNewRepo('');
+    try {
+      const response = await api.get<IRepository>(`repos/${newRepo}`);
+      const repository = response.data;
 
-    const repository = response.data;
+      setNewRepo('');
 
-    setRepositories([...repositories, repository]);
+      setRepositories([...repositories, repository]);
+      setInputError('');
+    } catch (err) {
+      setInputError('Erro na busca por esse repositorio');
+    }
   };
 
   return (
@@ -35,7 +45,7 @@ const Dashboard: React.FC = () => {
       <img src={logoImg} alt="Github Explorer" />
       <Style.Title>Explore repositórios no Github.</Style.Title>
 
-      <Style.Form onSubmit={handleAddRepository}>
+      <Style.Form hasError={!!inputError} onSubmit={handleAddRepository}>
         <input
           value={newRepo}
           onChange={e => setNewRepo(e.target.value)}
@@ -43,6 +53,7 @@ const Dashboard: React.FC = () => {
         />
         <button type="submit">Pesquisar</button>
       </Style.Form>
+      {inputError && <Style.Error>{inputError}</Style.Error>}
 
       <Style.Repositories>
         {repositories.map(repo => (
